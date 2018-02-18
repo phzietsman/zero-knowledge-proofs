@@ -20,7 +20,7 @@ default_r1cs_ppzksnark_pp::init_public_params();
   verificationKey << keypair.vk;
 
   ofstream fileOut;
-  fileOut.open("verificationKey_single");
+  fileOut.open("verificationKey");
 
   fileOut << verificationKey.rdbuf();
   fileOut.close();
@@ -28,7 +28,7 @@ default_r1cs_ppzksnark_pp::init_public_params();
   stringstream provingKey;
   provingKey << keypair.pk;
 
-  fileOut.open("provingKey_single");
+  fileOut.open("provingKey");
 
   fileOut << provingKey.rdbuf();
   fileOut.close();

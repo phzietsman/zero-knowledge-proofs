@@ -2,10 +2,8 @@ const {spawn} = require('child_process')
 var events = require('events');
 var eventEmitter = new events.EventEmitter();
 
-var multiProofGenerator
 var singleProofGenerator
 var proofCodeBlocking = false
-var multiProofGeneratorIsRunning = false
 var singleProofGeneratorIsRunning = false
 
 function getMatches(string, regex) {
@@ -25,20 +23,12 @@ function setProofCodeBlocking(value){
   proofCodeBlocking=value
 }
 
-function shutDown(multiOrSingle){
-  if(multiOrSingle=='multi'){
-    multiProofGenerator.stdin.write('q\n')
-  } else {
-    singleProofGenerator.stdin.write('q\n')
-  }
+function shutDown(){
+  singleProofGenerator.stdin.write('q\n')
 }
 
-function generateProof(multiOrSingle, paymentId){
-  if(multiOrSingle=='multi'){
-    multiProofGenerator.stdin.write(paymentId + '\n')
-  } else {
+function generateProof(paymentId){
     singleProofGenerator.stdin.write(paymentId + '\n')
-  }
 }
 
 function handleExecuteProgram(programName, args, msgStart, msgEnd, msgError, cb){
@@ -80,11 +70,11 @@ function handleExecuteProgram(programName, args, msgStart, msgEnd, msgError, cb)
   })
 }
 
-function generateNewKeyPair(multiOrSingle, cb){
-  var generateKeyPairProgram = multiOrSingle == 'multi' ? './payment_multi_generate_keypair' : './payment_in_out_generate_keypair'
+function generateNewKeyPair(cb){
+  var generateKeyPairProgram = './payment_in_out_generate_keypair'
   setProofCodeBlocking(true)
-  if((multiOrSingle == 'multi' && multiProofGeneratorIsRunning == true) || multiOrSingle == 'single' && singleProofGeneratorIsRunning == true){
-    shutDown(multiOrSingle)
+  if(singleProofGeneratorIsRunning){
+    shutDown()
   }
   handleExecuteProgram(generateKeyPairProgram, [], 'Generating key pair...', 'The key pair has been generated and the keys written to files', 'The key pair failed\n\n', function(){
     cb()
@@ -110,7 +100,7 @@ function logGeneratorOutput(proofGenerator){
 
     if(data.indexOf('Starting proof generation for')>-1){
   
-      var matches = getMatches(dataString, /proof_single_[0-9]{0,4}/g)
+      var matches = getMatches(dataString, /proof_[0-9]{0,4}/g)
       var payment_id = '1'  
       if(matches && matches.length>0){
         payment_id = matches[0].substring(13,matches[0].length)
@@ -120,9 +110,9 @@ function logGeneratorOutput(proofGenerator){
       }
     }
 
-    if(data.indexOf('Proof was generated!!proof_single')>-1){
+    if(data.indexOf('Proof was generated!!proof')>-1){
   
-      var matches = getMatches(dataString, /proof_single_[0-9]{0,4}/g)
+      var matches = getMatches(dataString, /proof_[0-9]{0,4}/g)
       var payment_id = '1'  
       if(matches && matches.length>0){
         payment_id = matches[0].substring(13,matches[0].length)
@@ -131,18 +121,6 @@ function logGeneratorOutput(proofGenerator){
 //        console.log(dataString)
       }
     }
-
-    /*if(data.indexOf('Compute the proof')>-1){
-      if(data.indexOf('(enter)')>-1){
- //       console.log('\nGenerating proof')
-      } else {
-        var matches = getMatches(dataString, /\[[0-9]{0,2}.[0-9]*s/g)
-        var noSecs = matches[1].substring(1,matches[1].length)
- //       console.log('\nProof generation ended:', noSecs)
-      }
-    } else {
- //     process.stdout.write('.')
-    }*/
 
   })
 
@@ -156,23 +134,17 @@ function logGeneratorOutput(proofGenerator){
 
 }
 
-function loadProvingKey(multiOrSingle){
+function loadProvingKey(){
   console.log('Loading proving key from file.  This will take a few seconds')
   setProofCodeBlocking(true)
-  if(multiOrSingle=='multi'){
-    multiProofGenerator = spawn('./payment_multi_generate_proof')
-    generatorIsRunning = true
-    logGeneratorOutput(multiProofGenerator)
-  } else {
-    singleProofGenerator = spawn('./payment_in_out_generate_proof')
-    logGeneratorOutput(singleProofGenerator)
-    generatorIsRunning = true
-  }
+  singleProofGenerator = spawn('./payment_in_out_generate_proof')
+  logGeneratorOutput(singleProofGenerator)
+  generatorIsRunning = true
 }
 
-function verifyProof(multiOrSingle, paymentId, cb){
+function verifyProof(paymentId, cb){
     eventEmitter.emit('proofVerificationStarted', paymentId);
-  var verifyProofProgram = multiOrSingle == 'multi' ? './payment_multi_verify_proof' : './payment_in_out_verify_proof'
+  var verifyProofProgram = './payment_in_out_verify_proof'
   handleExecuteProgram(verifyProofProgram, [paymentId], '', '', 'The proof verification failed\n\n', function(verifyErr){
     eventEmitter.emit('proofVerificationComplete', paymentId);
     cb(verifyErr)

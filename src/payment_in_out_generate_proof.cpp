@@ -66,11 +66,11 @@ int getUserInput(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKe
   cout << "Input from console: " << inputTemp << endl;
   if(inputTemp != "q")
   {
-    string proofName = "proof_single_";
+    string proofName = "proof_";
     string proofNameWithId = proofName + inputTemp;
-    string publicInputs = "publicInputParameters_single_";
+    string publicInputs = "publicInputParameters_";
     string publicInputsWithId = publicInputs + inputTemp;
-    string privateInputs = "privateInputParameters_single_";
+    string privateInputs = "privateInputParameters_";
     string privateInputsWithId = privateInputs + inputTemp;
 
     cout << proofNameWithId << endl;
@@ -94,7 +94,7 @@ int getUserInput(r1cs_ppzksnark_proving_key<default_r1cs_ppzksnark_pp> provingKe
 
 int main(int argc, char *argv[])
 {
-  string keyFileName = "provingKey_single";
+  string keyFileName = "provingKey";
 
   // Initialize the curve parameters.
   default_r1cs_ppzksnark_pp::init_public_params();
